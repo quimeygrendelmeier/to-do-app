@@ -1,11 +1,13 @@
 body{
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #ffcc0f, #ffcd00);
     display: flex;
-    justify-content: center;
     flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
     margin: 0;
-    min-height: 100vh;
+    padding-top: 40px;
+    min-height: 80vh;
 }
 
 .container{
@@ -16,11 +18,15 @@ body{
     max-width: 100%;
     display: flex;
     flex-direction: column;
-    margin: 40px auto;
+    margin: 50px auto;
 }
 
 h1{
     text-align: center;
+}
+
+p{
+    color: black;
 }
 
 .input-group{
@@ -66,6 +72,15 @@ li span{
     min-width: 0;
     overflow-wrap: break-word;
     flex-shrink: 0;
+    cursor: pointer;
+}
+
+li input {
+    flex: 1;
+    min-width: 0;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
 }
 
 .completed span{
@@ -75,17 +90,34 @@ li span{
 }
 
 .contador-de-tareas{
-    margin-top: auto;
     text-align: center;
     color: white;
     font-size: 14px;
+    margin-bottom: 15px;
 }
 
-/*#pendingTasks{
-    background: red;
+.actions {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
 }
 
-#completedTasks{
-    background: rgb(0, 255, 0);
+.cancel-btn {
+    background: gray;
 }
-*/
+
+.delete-btn {
+    background: crimson;
+}
+
+.hidden {
+    display: none;
+}
+
+.edit-btn {
+    background: #667eea;
+}
+
+.edit-btn.save-mode {
+    background: green;
+}

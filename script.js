@@ -5,7 +5,6 @@ const totalEl = document.getElementById("totalTasks");
 const pendingEl = document.getElementById("pendingTasks");
 const completedEl = document.getElementById("completedTasks");
 
-
 addBtn.addEventListener("click", () => {
     const text = input.value.trim();
     if (text === "") return;
@@ -22,12 +21,24 @@ input.addEventListener("keypress", (e) => {
 
 function createTask(text) {
     const li = document.createElement("li");
-    
     const span = document.createElement("span");
     span.textContent = text;
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "X";
+    deleteBtn.classList.add("delete-btn");
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Editar";
+    editBtn.classList.add("edit-btn");
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Cancelar";
+    cancelBtn.classList.add("cancel-btn");
+    cancelBtn.classList.add("hidden");
+
+    const actions = document.createElement("div");
+    actions.classList.add("actions");
 
     span.addEventListener("click", () => {
         li.classList.toggle("completed");
@@ -39,9 +50,63 @@ function createTask(text) {
         updateStats();
     });
 
+    editBtn.addEventListener("click", () => {
+    if (editBtn.textContent === "Guardar") {
+        const editInput = li.querySelector("input");
+        span.textContent =
+            editInput.value.trim() || "Tarea vacía";
+
+        li.replaceChild(span, editInput);
+
+        editBtn.textContent = "Editar";
+        editBtn.style.background = "#667eea";
+        cancelBtn.classList.add("hidden");
+        return;
+    }
+
+    const editInput = document.createElement("input");
+    editInput.type = "text";
+    editInput.value = span.textContent;
+
+    li.replaceChild(editInput, span);
+
+    editBtn.textContent = "Guardar";
+    editBtn.classList.add("save-mode");
+    cancelBtn.classList.remove("hidden");
+    editInput.focus();
+
+    editInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            span.textContent =
+                editInput.value.trim() || "Tarea vacia";
+
+            li.replaceChild(span, editInput);
+            editBtn.textContent = "Editar";
+            editBtn.classList.remove("save-mode");
+            cancelBtn.classList.add("hidden");
+        }
+    });
+});
+
+cancelBtn.addEventListener("click", () => {
+    const editInput = li.querySelector("input");
+    if (!editInput) return;
+
+    li.replaceChild(span, editInput);
+    editBtn.textContent = "Editar";
+    editBtn.classList.remove("save-mode");
+    cancelBtn.classList.add("hidden");
+});
+
+    actions.appendChild(editBtn);
+    actions.appendChild(cancelBtn);
+    actions.appendChild(deleteBtn);
+
     li.appendChild(span);
-    li.appendChild(deleteBtn);
+    li.appendChild(actions);
+
     list.appendChild(li);
+
     updateStats();
 }
 
