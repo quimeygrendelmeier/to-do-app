@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To-Do App</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <div class="contador-de-tareas">
@@ -16,13 +17,14 @@
     <div class="container">
         <h1>Lista de Tareas</h1>
         <div class="input-group">
-        <input type="text" id="taskInput" placeholder="Escribí una tarea...">
-        <button id="addBtn">Agregar</button>
+            <input type="text" id="taskInput" placeholder="Escribí una tarea...">
+            <button id="addBtn">Agregar</button>
     </div>
 
         <ul id="taskList"></ul>
     </div>
 
     <script src="script.js"></script>
+    <script>lucide.createIcons();</script>
 </body>
 </html>

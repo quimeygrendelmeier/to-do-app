@@ -1,4 +1,8 @@
-body{
+* {
+    box-sizing: border-box;
+}
+
+body {
     font-family: Arial, sans-serif;
     background: linear-gradient(135deg, #ffcc0f, #ffcd00);
     display: flex;
@@ -10,45 +14,43 @@ body{
     min-height: 80vh;
 }
 
-.container{
+.container {
     background: white;
     padding: 25px;
     border-radius: 15px;
-    width: 350px;
-    max-width: 100%;
+    width: 90vw;
+    max-width: 350px;
     display: flex;
     flex-direction: column;
     margin: 50px auto;
 }
 
-h1{
+h1 {
     text-align: center;
 }
 
-p{
-    color: black;
-}
-
-.input-group{
+.input-group {
     display: flex;
     gap: 10px;
     width: 100%;
 }
 
-input{
+input {
     flex: 1;
     padding: 10px;
     border-radius: 8px;
     border: 1px solid #ccc;
 }
 
-button{
+button {
     padding: 10px;
     border: none;
     border-radius: 8px;
     background: #667eea;
     color: white;
     cursor: pointer;
+    min-height: 40px;
+    transition: .2s ease;
 }
 
 ul {
@@ -56,7 +58,7 @@ ul {
     margin: 0;
 }
 
-li{
+li {
     padding: 10px;
     margin-top: 10px;
     gap: 10px;
@@ -65,12 +67,13 @@ li{
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: .2s ease;
 }
 
-li span{
+li span {
     flex: 1;
     min-width: 0;
-    overflow-wrap: break-word;
+    word-break: break-word;
     flex-shrink: 0;
     cursor: pointer;
 }
@@ -83,10 +86,10 @@ li input {
     border: 1px solid #ccc;
 }
 
-.completed span{
+.completed span {
     text-decoration: line-through;
-    opacity: 0.5;
-    color: rgb(128, 128, 128);
+    opacity: .5;
+    color: gray;
 }
 
 .contador-de-tareas{
@@ -100,6 +103,10 @@ li input {
     display: flex;
     gap: 5px;
     flex-shrink: 0;
+}
+
+.actions button {
+    min-width: 40px;
 }
 
 .cancel-btn {
@@ -120,4 +127,43 @@ li input {
 
 .edit-btn.save-mode {
     background: green;
+}
+
+@media (max-width: 480px) {
+
+    body {
+        padding-top: 20px;
+    }
+
+    .container {
+        padding: 18px;
+        margin: 20px auto;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .contador-de-tareas {
+        font-size: 12px;
+    }
+
+    button {
+        padding: 8px;
+    }
+
+    input {
+        padding: 8px;
+    }
+}
+
+@media (hover: hover) {
+
+    button:hover {
+        opacity: 0.9;
+    }
+
+    li:hover {
+        transform: translateY(-1px);
+    }
 }
