@@ -4,31 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To-Do App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <div class="contador-de-tareas">
-        <p id="totalTasks"></p>
-        <p id="pendingTasks"></p>
-        <p id="completedTasks"></p>
-    </div>
+    <main class="app">
+        <header class="app-header">
+            <div class="header-top">
+                <h1 class="app-title">Lista de tareas</h1>
+                <button id="themeToggle" class="theme-toggle" aria-label="Cambiar tema">
+                    <i data-lucide="moon"></i>
+                </button>
+            </div>
+        </header>
 
-    <div class="filters">
-        <button id="allBtn">Todas</button>
-        <button id="pendingBtn">Pendientes</button>
-        <button id="completedBtn">Completadas</button>
-    </div>
+        <nav class="filters" role="tablist" aria-label="Filtrar tareas">
+            <button class="filter-btn active" id="allBtn" role="tab" aria-selected="true">
+                Todas <span class="filter-count" id="allCount">0</span>
+            </button>
+            <button class="filter-btn" id="pendingBtn" role="tab" aria-selected="false">
+                Pendientes <span class="filter-count" id="pendingCount">0</span>
+            </button>
+            <button class="filter-btn" id="completedBtn" role="tab" aria-selected="false">
+                Completadas <span class="filter-count" id="completedCount">0</span>
+            </button>
+        </nav>
 
-    <div class="container">
-        <h1>Lista de Tareas</h1>
         <div class="input-group">
-            <input type="text" id="taskInput" placeholder="Escribí una tarea...">
-            <button id="addBtn">Agregar</button>
-    </div>
+            <input type="text" id="taskInput" placeholder="Escribí una tarea..." aria-label="Nueva tarea">
+            <button id="addBtn" aria-label="Agregar tarea">
+                <i data-lucide="plus"></i>
+            </button>
+        </div>
 
-        <ul id="taskList"></ul>
-    </div>
+        <ul id="taskList" class="task-list"></ul>
+        <p class="empty-state" id="emptyState">Todavía no hay tareas</p>
+    </main>
 
     <script src="script.js"></script>
     <script>lucide.createIcons();</script>
