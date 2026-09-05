@@ -4,6 +4,9 @@ const list = document.getElementById("taskList");
 const totalEl = document.getElementById("totalTasks");
 const pendingEl = document.getElementById("pendingTasks");
 const completedEl = document.getElementById("completedTasks");
+const allBtn = document.getElementById("allBtn");
+const pendingBtn = document.getElementById("pendingBtn");
+const completedBtn = document.getElementById("completedBtn");
 
 addBtn.addEventListener("click", () => {
     const text = input.value.trim();
@@ -142,6 +145,30 @@ function loadTasks() {
 
 loadTasks();
 updateStats();
+
+allBtn.addEventListener("click", () => {
+    document.querySelectorAll("#taskList li").forEach(li => {
+        li.style.display = "flex";
+    });
+});
+
+pendingBtn.addEventListener("click", () => {
+    document.querySelectorAll("#taskList li").forEach(li => {
+        li.style.display =
+            li.classList.contains("completed")
+                ? "none"
+                : "flex";
+    });
+});
+
+completedBtn.addEventListener("click", () => {
+    document.querySelectorAll("#taskList li").forEach(li => {
+        li.style.display =
+            li.classList.contains("completed")
+                ? "flex"
+                : "none";
+    });
+});
 
 function saveTasks() {
     const tasks = [];
