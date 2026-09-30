@@ -3,7 +3,9 @@ const addBtn = document.getElementById("addBtn");
 const list = document.getElementById("taskList");
 const allCountEl = document.getElementById("allCount");
 const pendingCountEl = document.getElementById("pendingCount");
+const pendingTotalEl = document.getElementById("pendingTotal");
 const completedCountEl = document.getElementById("completedCount");
+const completedTotalEl = document.getElementById("completedTotal");
 const allBtn = document.getElementById("allBtn");
 const pendingBtn = document.getElementById("pendingBtn");
 const completedBtn = document.getElementById("completedBtn");
@@ -13,7 +15,10 @@ const themeToggle = document.getElementById("themeToggle");
 const filterBtns = { all: allBtn, pending: pendingBtn, completed: completedBtn };
 let currentFilter = "all";
 let draggedItem = null;
+let draggedContainer = null;
 let pendingDelete = null;
+
+/* ---------- Theme ---------- */
 
 function setTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
@@ -40,8 +45,10 @@ if (themeToggle) {
     });
 }
 
+/* ---------- Drag & drop reorder ---------- */
+
 function getDragAfterElement(container, y) {
-    const items = [...container.querySelectorAll("li:not(.dragging)")];
+    const items = [...container.children].filter(el => !el.classList.contains("dragging"));
 
     return items.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
@@ -55,13 +62,13 @@ function getDragAfterElement(container, y) {
 }
 
 function onPointerMove(e) {
-    if (!draggedItem) return;
-    const afterElement = getDragAfterElement(list, e.clientY);
+    if (!draggedItem || !draggedContainer) return;
+    const afterElement = getDragAfterElement(draggedContainer, e.clientY);
 
     if (afterElement == null) {
-        list.appendChild(draggedItem);
+        draggedContainer.appendChild(draggedItem);
     } else {
-        list.insertBefore(draggedItem, afterElement);
+        draggedContainer.insertBefore(draggedItem, afterElement);
     }
 }
 
@@ -69,10 +76,13 @@ function onPointerUp() {
     if (draggedItem) {
         draggedItem.classList.remove("dragging");
         draggedItem = null;
+        draggedContainer = null;
         saveTasks();
     }
     document.removeEventListener("pointermove", onPointerMove);
 }
+
+/* ---------- Toast (undo delete) ---------- */
 
 const toast = document.createElement("div");
 toast.className = "toast";
@@ -106,23 +116,30 @@ function showToast(message, onUndo) {
     }, 4000);
 }
 
-function deleteTaskWithUndo(li) {
-    const nextSibling = li.nextSibling;
-    li.remove();
+function deleteWithUndo(el, container, message, onAfterChange) {
+    const nextSibling = el.nextSibling;
+    el.remove();
+    if (onAfterChange) onAfterChange();
     saveTasks();
     updateStats();
+    applyFilter();
 
-    showToast("Tarea eliminada", () => {
+    showToast(message, () => {
         if (nextSibling) {
-            list.insertBefore(li, nextSibling);
+            container.insertBefore(el, nextSibling);
         } else {
-            list.appendChild(li);
+            container.appendChild(el);
         }
+        if (onAfterChange) onAfterChange();
         saveTasks();
         updateStats();
         applyFilter();
         lucide.createIcons();
     });
+}
+
+function deleteTaskWithUndo(li) {
+    deleteWithUndo(li, list, "Tarea eliminada", null);
 }
 
 addBtn.addEventListener("click", () => {
@@ -139,14 +156,26 @@ input.addEventListener("keydown", (e) => {
     }
 });
 
-function createTask(text, completed = false) {
+function createTask(text, completed = false, completedAt = null, subtasks = []) {
     const li = document.createElement("li");
-    const span = document.createElement("span");
+    const taskRow = document.createElement("div");
+    taskRow.classList.add("task-row");
 
-    span.textContent = text;
+    const span = document.createElement("span");
+    const taskText = document.createElement("span");
+    taskText.classList.add("task-text");
+    taskText.textContent = text;
+
+    const progressBadge = document.createElement("span");
+    progressBadge.classList.add("subtask-progress");
+    progressBadge.style.display = "none";
+
+    span.appendChild(taskText);
+    span.appendChild(progressBadge);
 
     if (completed) {
         li.classList.add("completed");
+        li.dataset.completedAt = completedAt || Date.now();
     }
 
     const grip = document.createElement("button");
@@ -157,6 +186,7 @@ function createTask(text, completed = false) {
     grip.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         draggedItem = li;
+        draggedContainer = list;
         li.classList.add("dragging");
         document.addEventListener("pointermove", onPointerMove);
         document.addEventListener("pointerup", onPointerUp, { once: true });
@@ -166,6 +196,11 @@ function createTask(text, completed = false) {
     check.classList.add("check");
     check.setAttribute("aria-label", "Marcar como completada");
     check.innerHTML = '<i data-lucide="check"></i>';
+
+    const subtasksBtn = document.createElement("button");
+    subtasksBtn.classList.add("subtasks-btn");
+    subtasksBtn.setAttribute("aria-label", "Ver sub-tareas");
+    subtasksBtn.innerHTML = '<i data-lucide="list-plus"></i>';
 
     const deleteBtn = document.createElement("button");
     deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
@@ -190,8 +225,223 @@ function createTask(text, completed = false) {
         lucide.createIcons();
     }
 
+    /* ---------- Subtareas ---------- */
+
+    const subtaskList = document.createElement("ul");
+    subtaskList.classList.add("subtask-list", "collapsed");
+
+    function renderSubtaskProgress() {
+        const items = [...subtaskList.querySelectorAll(".subtask-item")];
+        if (items.length === 0) {
+            progressBadge.textContent = "";
+            progressBadge.style.display = "none";
+            subtaskList.classList.add("collapsed");
+            subtasksBtn.classList.remove("has-open");
+            return;
+        }
+        const done = items.filter(item => item.classList.contains("completed")).length;
+        progressBadge.textContent = `(${done}/${items.length})`;
+        progressBadge.style.display = "inline";
+    }
+
+    function updateParentFromSubtasks() {
+        const items = [...subtaskList.querySelectorAll(".subtask-item")];
+        if (items.length === 0) return;
+
+        const allDone = items.every(item => item.classList.contains("completed"));
+        const isParentCompleted = li.classList.contains("completed");
+
+        if (allDone && !isParentCompleted) {
+            li.classList.add("completed");
+            li.dataset.completedAt = Date.now();
+        } else if (!allDone && isParentCompleted) {
+            li.classList.remove("completed");
+            delete li.dataset.completedAt;
+        }
+    }
+
+    function createSubtaskItem(subText, subCompleted) {
+        const item = document.createElement("li");
+        item.classList.add("subtask-item");
+        if (subCompleted) item.classList.add("completed");
+
+        const subGrip = document.createElement("button");
+        subGrip.classList.add("subtask-drag-handle");
+        subGrip.setAttribute("aria-label", "Reordenar sub-tarea");
+        subGrip.innerHTML = '<i data-lucide="grip-vertical"></i>';
+
+        subGrip.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            draggedItem = item;
+            draggedContainer = subtaskList;
+            item.classList.add("dragging");
+            document.addEventListener("pointermove", onPointerMove);
+            document.addEventListener("pointerup", onPointerUp, { once: true });
+        });
+
+        const subCheck = document.createElement("button");
+        subCheck.classList.add("subtask-check");
+        subCheck.setAttribute("aria-label", "Marcar sub-tarea como completada");
+        subCheck.innerHTML = '<i data-lucide="check"></i>';
+
+        const subText_ = document.createElement("span");
+        subText_.classList.add("subtask-text");
+        subText_.textContent = subText;
+
+        const subEditBtn = document.createElement("button");
+        subEditBtn.innerHTML = '<i data-lucide="pencil"></i>';
+        subEditBtn.classList.add("subtask-edit-btn");
+        subEditBtn.setAttribute("aria-label", "Editar sub-tarea");
+
+        const subCancelBtn = document.createElement("button");
+        subCancelBtn.innerHTML = '<i data-lucide="x"></i>';
+        subCancelBtn.classList.add("subtask-cancel-btn", "hidden");
+        subCancelBtn.setAttribute("aria-label", "Cancelar edición");
+
+        const subDeleteBtn = document.createElement("button");
+        subDeleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+        subDeleteBtn.classList.add("subtask-delete-btn");
+        subDeleteBtn.setAttribute("aria-label", "Borrar sub-tarea");
+
+        function resetSubEditMode() {
+            subEditBtn.innerHTML = '<i data-lucide="pencil"></i>';
+            subEditBtn.classList.remove("save-mode");
+            subCancelBtn.classList.add("hidden");
+            lucide.createIcons();
+        }
+
+        function toggleSubtask() {
+            item.classList.toggle("completed");
+            renderSubtaskProgress();
+            updateParentFromSubtasks();
+            saveTasks();
+            updateStats();
+            applyFilter();
+        }
+
+        subCheck.addEventListener("click", toggleSubtask);
+        subText_.addEventListener("click", toggleSubtask);
+
+        subEditBtn.addEventListener("click", () => {
+            if (subEditBtn.classList.contains("save-mode")) {
+                const editInput = item.querySelector("input");
+                subText_.textContent = editInput.value.trim() || "Sub-tarea vacía";
+
+                item.replaceChild(subText_, editInput);
+
+                resetSubEditMode();
+                saveTasks();
+                return;
+            }
+
+            const editInput = document.createElement("input");
+            editInput.type = "text";
+            editInput.classList.add("subtask-input");
+            editInput.value = subText_.textContent;
+
+            item.replaceChild(editInput, subText_);
+
+            subEditBtn.innerHTML = '<i data-lucide="save"></i>';
+            lucide.createIcons();
+            subEditBtn.classList.add("save-mode");
+            subCancelBtn.classList.remove("hidden");
+            editInput.focus();
+
+            editInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    subText_.textContent = editInput.value.trim() || "Sub-tarea vacía";
+
+                    item.replaceChild(subText_, editInput);
+
+                    resetSubEditMode();
+                    saveTasks();
+                }
+            });
+        });
+
+        subCancelBtn.addEventListener("click", () => {
+            const editInput = item.querySelector("input");
+            if (!editInput) return;
+
+            item.replaceChild(subText_, editInput);
+            resetSubEditMode();
+        });
+
+        subDeleteBtn.addEventListener("click", () => {
+            deleteWithUndo(item, subtaskList, "Sub-tarea eliminada", () => {
+                renderSubtaskProgress();
+                updateParentFromSubtasks();
+            });
+        });
+
+        const subActions = document.createElement("div");
+        subActions.classList.add("subtask-actions");
+        subActions.appendChild(subEditBtn);
+        subActions.appendChild(subCancelBtn);
+        subActions.appendChild(subDeleteBtn);
+
+        item.appendChild(subGrip);
+        item.appendChild(subCheck);
+        item.appendChild(subText_);
+        item.appendChild(subActions);
+
+        return item;
+    }
+
+    const addRow = document.createElement("li");
+    addRow.classList.add("subtask-add-row");
+    const subInput = document.createElement("input");
+    subInput.type = "text";
+    subInput.classList.add("subtask-input");
+    subInput.placeholder = "Agregar sub-tarea...";
+    addRow.appendChild(subInput);
+
+    subInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            const val = subInput.value.trim();
+            if (val === "") return;
+
+            subtaskList.insertBefore(createSubtaskItem(val, false), addRow);
+            subInput.value = "";
+            renderSubtaskProgress();
+            updateParentFromSubtasks();
+            saveTasks();
+            updateStats();
+            applyFilter();
+            lucide.createIcons();
+        }
+    });
+
+    subtasks.forEach(sub => {
+        subtaskList.appendChild(createSubtaskItem(sub.text, sub.completed));
+    });
+    subtaskList.appendChild(addRow);
+    renderSubtaskProgress();
+
+    subtasksBtn.addEventListener("click", () => {
+        subtaskList.classList.toggle("collapsed");
+        const isOpen = !subtaskList.classList.contains("collapsed");
+        subtasksBtn.classList.toggle("has-open", isOpen);
+        if (isOpen) subInput.focus();
+    });
+
+    /* ---------- Completar tarea (con cascada a subtareas) ---------- */
+
     function toggleComplete() {
-        li.classList.toggle("completed");
+        const willComplete = !li.classList.contains("completed");
+        li.classList.toggle("completed", willComplete);
+
+        if (willComplete) {
+            li.dataset.completedAt = Date.now();
+        } else {
+            delete li.dataset.completedAt;
+        }
+
+        subtaskList.querySelectorAll(".subtask-item").forEach(item => {
+            item.classList.toggle("completed", willComplete);
+        });
+        renderSubtaskProgress();
+
         saveTasks();
         updateStats();
         applyFilter();
@@ -209,10 +459,10 @@ function createTask(text, completed = false) {
 
     editBtn.addEventListener("click", () => {
         if (editBtn.classList.contains("save-mode")) {
-            const editInput = li.querySelector("input");
-            span.textContent = editInput.value.trim() || "Tarea vacía";
+            const editInput = taskRow.querySelector("input");
+            taskText.textContent = editInput.value.trim() || "Tarea vacía";
 
-            li.replaceChild(span, editInput);
+            taskRow.replaceChild(span, editInput);
 
             resetEditMode();
             saveTasks();
@@ -221,9 +471,10 @@ function createTask(text, completed = false) {
 
         const editInput = document.createElement("input");
         editInput.type = "text";
-        editInput.value = span.textContent;
+        editInput.classList.add("task-input");
+        editInput.value = taskText.textContent;
 
-        li.replaceChild(editInput, span);
+        taskRow.replaceChild(editInput, span);
 
         editBtn.innerHTML = '<i data-lucide="save"></i>';
         lucide.createIcons();
@@ -233,9 +484,9 @@ function createTask(text, completed = false) {
 
         editInput.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
-                span.textContent = editInput.value.trim() || "Tarea vacía";
+                taskText.textContent = editInput.value.trim() || "Tarea vacía";
 
-                li.replaceChild(span, editInput);
+                taskRow.replaceChild(span, editInput);
 
                 resetEditMode();
                 saveTasks();
@@ -244,21 +495,25 @@ function createTask(text, completed = false) {
     });
 
     cancelBtn.addEventListener("click", () => {
-        const editInput = li.querySelector("input");
+        const editInput = taskRow.querySelector("input");
         if (!editInput) return;
 
-        li.replaceChild(span, editInput);
+        taskRow.replaceChild(span, editInput);
         resetEditMode();
     });
 
+    actions.appendChild(subtasksBtn);
     actions.appendChild(editBtn);
     actions.appendChild(cancelBtn);
     actions.appendChild(deleteBtn);
 
-    li.appendChild(grip);
-    li.appendChild(check);
-    li.appendChild(span);
-    li.appendChild(actions);
+    taskRow.appendChild(grip);
+    taskRow.appendChild(check);
+    taskRow.appendChild(span);
+    taskRow.appendChild(actions);
+
+    li.appendChild(taskRow);
+    li.appendChild(subtaskList);
 
     list.appendChild(li);
     lucide.createIcons();
@@ -305,13 +560,16 @@ function animateNumber(el, target) {
 }
 
 function updateStats() {
-    const total = document.querySelectorAll("#taskList li").length;
-    const completed = document.querySelectorAll("#taskList li.completed").length;
+    const items = [...list.children];
+    const total = items.length;
+    const completed = items.filter(li => li.classList.contains("completed")).length;
     const pending = total - completed;
 
     animateNumber(allCountEl, total);
     animateNumber(pendingCountEl, pending);
+    animateNumber(pendingTotalEl, total);
     animateNumber(completedCountEl, completed);
+    animateNumber(completedTotalEl, total);
 }
 
 function setActiveFilter(name) {
@@ -325,14 +583,34 @@ function setActiveFilter(name) {
 }
 
 function applyFilter() {
-    list.classList.toggle("filtering", currentFilter !== "all");
+    list.classList.toggle("completed-view", currentFilter === "completed");
 
-    document.querySelectorAll("#taskList li").forEach(li => {
+    const items = [...list.children];
+
+    if (currentFilter === "completed") {
+        const completedItems = items
+            .filter(li => li.classList.contains("completed"))
+            .sort((a, b) => {
+                const aTime = parseInt(a.dataset.completedAt, 10) || 0;
+                const bTime = parseInt(b.dataset.completedAt, 10) || 0;
+                return aTime - bTime; // la primera que completaste, primera en la lista
+            });
+
+        completedItems.forEach((li, index) => {
+            li.style.order = index;
+        });
+    } else {
+        items.forEach(li => {
+            li.style.order = "";
+        });
+    }
+
+    items.forEach(li => {
         const isCompleted = li.classList.contains("completed");
         let show = true;
         if (currentFilter === "pending") show = !isCompleted;
         if (currentFilter === "completed") show = isCompleted;
-        li.style.display = show ? "flex" : "none";
+        li.style.display = show ? "block" : "none";
     });
 }
 
@@ -345,7 +623,7 @@ function loadTasks() {
         JSON.parse(localStorage.getItem("tasks")) || [];
 
     tasks.forEach(task => {
-        createTask(task.text, task.completed);
+        createTask(task.text, task.completed, task.completedAt, task.subtasks || []);
     });
 
     updateStats();
@@ -355,10 +633,19 @@ function loadTasks() {
 function saveTasks() {
     const tasks = [];
 
-    document.querySelectorAll("#taskList li").forEach(li => {
+    [...list.children].forEach(li => {
+        const subtasks = [...li.querySelectorAll(".subtask-item")].map(item => ({
+            text: item.querySelector(".subtask-text").textContent,
+            completed: item.classList.contains("completed")
+        }));
+
         tasks.push({
-            text: li.querySelector("span").textContent,
-            completed: li.classList.contains("completed")
+            text: li.querySelector(".task-text").textContent,
+            completed: li.classList.contains("completed"),
+            completedAt: li.dataset.completedAt
+                ? parseInt(li.dataset.completedAt, 10)
+                : null,
+            subtasks
         });
     });
 

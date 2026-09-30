@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To-Do App</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -26,10 +27,10 @@
                 Todas <span class="filter-count" id="allCount">0</span>
             </button>
             <button class="filter-btn" id="pendingBtn" role="tab" aria-selected="false">
-                Pendientes <span class="filter-count" id="pendingCount">0</span>
+                Pendientes <span class="filter-count"><span id="pendingCount">0</span>/<span id="pendingTotal">0</span></span>
             </button>
             <button class="filter-btn" id="completedBtn" role="tab" aria-selected="false">
-                Completadas <span class="filter-count" id="completedCount">0</span>
+                Completadas <span class="filter-count"><span id="completedCount">0</span>/<span id="completedTotal">0</span></span>
             </button>
         </nav>
 
@@ -41,7 +42,7 @@
         </div>
 
         <ul id="taskList" class="task-list"></ul>
-        <p class="empty-state" id="emptyState">Todavía no hay tareas</p>
+        <p class="empty-state" id="emptyState">Todavía no hay tareas.</p>
     </main>
 
     <script src="script.js"></script>

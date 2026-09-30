@@ -75,6 +75,8 @@ body {
         12px 12px 0 var(--paper-shadow-2);
 }
 
+/* ---------- Header & stats ---------- */
+
 .app-header {
     margin-bottom: 18px;
 }
@@ -117,6 +119,8 @@ body {
     height: 17px;
 }
 
+/* ---------- Filter counts ---------- */
+
 .filter-count {
     font-size: inherit;
     font-weight: inherit;
@@ -138,6 +142,8 @@ body {
 .filter-count.bump {
     animation: bump 0.32s ease;
 }
+
+/* ---------- Filters (underline tabs) ---------- */
 
 .filters {
     display: flex;
@@ -179,6 +185,8 @@ body {
 .filter-btn.active::after {
     transform: scaleX(1);
 }
+
+/* ---------- Input ---------- */
 
 .input-group {
     display: flex;
@@ -233,29 +241,55 @@ body {
     transform: scale(0.94);
 }
 
+/* ---------- Task list ---------- */
+
 .task-list {
     list-style: none;
     padding: 0;
     margin: 12px 0 0;
-    max-height: 46vh;
+    display: flex;
+    flex-direction: column;
+    max-height: min(570px, 65vh);
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ink-faint) transparent;
 }
 
-.task-list li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.task-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.task-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.task-list::-webkit-scrollbar-thumb {
+    background-color: var(--ink-faint);
+    border-radius: 10px;
+}
+
+.task-list::-webkit-scrollbar-thumb:hover {
+    background-color: var(--accent);
+}
+
+.task-list > li {
     padding: 12px 2px;
     border-bottom: 1px solid var(--paper-line);
     background: var(--paper);
 }
 
-.task-list li:last-child {
+.task-list > li:last-child {
     border-bottom: none;
 }
 
-.task-list li.dragging {
+.task-list > li.dragging {
     opacity: 0.4;
+}
+
+.task-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .drag-handle {
@@ -276,11 +310,6 @@ body {
 .drag-handle svg {
     width: 15px;
     height: 15px;
-}
-
-.task-list.filtering .drag-handle {
-    opacity: 0.25;
-    pointer-events: none;
 }
 
 .check {
@@ -333,8 +362,199 @@ li input {
     border: 1px solid var(--ink-faint);
 }
 
+.task-input {
+    padding: 6px 2px;
+    border: none;
+    border-bottom: 2px solid var(--accent);
+    border-radius: 0;
+    background: transparent;
+    color: var(--ink-soft);
+}
+
+.task-input:focus {
+    outline: none;
+}
+
 .completed span {
     text-decoration: line-through;
+    color: var(--ink-faint);
+}
+
+/* ---------- Subtareas ---------- */
+
+.subtask-progress {
+    flex: 0 0 auto;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    margin-left: 6px;
+    font-weight: 400;
+}
+
+.subtasks-btn:hover {
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+}
+
+.subtasks-btn.has-open {
+    color: var(--accent);
+}
+
+.subtask-list {
+    list-style: none;
+    margin: 10px 0 0 30px;
+    padding: 0 0 0 12px;
+    border-left: 2px solid var(--paper-line);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.subtask-list.collapsed {
+    display: none;
+}
+
+.subtask-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.subtask-check {
+    flex-shrink: 0;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    border: 2px solid var(--ink-faint);
+    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.subtask-check svg {
+    width: 10px;
+    height: 10px;
+    color: white;
+    opacity: 0;
+    transition: opacity .1s ease;
+}
+
+.subtask-item.completed .subtask-check {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.subtask-item.completed .subtask-check svg {
+    opacity: 1;
+}
+
+.subtask-text {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.subtask-drag-handle {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border: none;
+    background: none;
+    color: var(--ink-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    padding: 0;
+    touch-action: none;
+}
+
+.subtask-drag-handle svg {
+    width: 12px;
+    height: 12px;
+}
+
+.subtask-item.dragging {
+    opacity: 0.4;
+}
+
+.subtask-actions {
+    display: flex;
+    gap: 0;
+    flex-shrink: 0;
+}
+
+.subtask-actions button {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--ink-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+.subtask-actions svg {
+    width: 12px;
+    height: 12px;
+}
+
+.subtask-edit-btn:hover {
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+}
+
+.subtask-edit-btn.save-mode {
+    color: var(--accent);
+}
+
+.subtask-cancel-btn:hover {
+    background: var(--paper-line);
+    color: var(--ink-soft);
+}
+
+.subtask-delete-btn:hover {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.subtask-actions button.hidden {
+    display: none;
+}
+
+.subtask-add-row {
+    display: flex;
+    align-items: center;
+}
+
+.subtask-input {
+    flex: 1;
+    min-width: 0;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--ink);
+    padding: 4px 2px;
+    border: none;
+    border-bottom: 1px solid var(--paper-line);
+    background: transparent;
+}
+
+.subtask-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.subtask-input::placeholder {
     color: var(--ink-faint);
 }
 
@@ -349,6 +569,8 @@ li input {
 .task-list:empty + .empty-state {
     display: block;
 }
+
+/* ---------- Actions (edit/cancel/delete) ---------- */
 
 .actions {
     display: flex;
@@ -399,6 +621,24 @@ li input {
     display: none;
 }
 
+.task-list.completed-view .edit-btn,
+.task-list.completed-view .subtask-edit-btn {
+    display: none;
+}
+
+/* Ocultar el input para agregar tareas y los botones la sección en Completadas */
+.app:has(.task-list.completed-view) .input-group {
+    display: none;
+}
+
+.task-list.completed-view .drag-handle,
+.task-list.completed-view .subtasks-btn,
+.task-list.completed-view .subtask-add-row {
+    display: none !important;
+}
+
+/* ---------- Accessibility ---------- */
+
 button:focus-visible,
 input:focus-visible {
     outline: 2px solid var(--accent);
@@ -410,6 +650,8 @@ input:focus-visible {
         transition: none !important;
     }
 }
+
+/* ---------- Responsive ---------- */
 
 @media (max-width: 420px) {
     body {
@@ -425,10 +667,6 @@ input:focus-visible {
 
     .app-title {
         font-size: 2.1rem;
-    }
-
-    .stats {
-        gap: 14px;
     }
 
     .filter-btn {
@@ -448,9 +686,11 @@ input:focus-visible {
     }
 
     .task-list {
-        max-height: 52vh;
+        max-height: min(570px, 80vh);
     }
 }
+
+/* ---------- Toast (undo) ---------- */
 
 .toast {
     position: fixed;
@@ -496,7 +736,7 @@ input:focus-visible {
         color: var(--ink);
     }
 
-    .task-list li:hover {
+    .task-row:hover {
         background: rgba(43, 36, 32, 0.02);
     }
 
